@@ -41,7 +41,7 @@ quoted_perl_command = $(subst ','\'',$(perl_command))
 # `make install`
 
 # Set the default DEBUG_LEVEL to 1
-DEBUG_LEVEL?=1
+DEBUG_LEVEL?=0
 
 ifeq ($(MAKECMDGOALS),dbg)
 	DEBUG_LEVEL=2
@@ -321,6 +321,9 @@ BENCHTOOLOBJECTS = $(BENCH_LIB_SOURCES:.cc=.o) $(LIBOBJECTS) $(TESTUTIL)
 
 EXPOBJECTS = $(EXP_LIB_SOURCES:.cc=.o) $(LIBOBJECTS) $(TESTUTIL)
 
+LOGTESTS = \
+    log_level0_sstable_test
+
 TESTS = \
 	db_basic_test \
 	db_encryption_test \
@@ -573,7 +576,8 @@ endif  # PLATFORM_SHARED_EXT
 	analyze tools tools_lib
 
 
-all: $(LIBRARY) $(BENCHMARKS) tools tools_lib test_libs $(TESTS)
+#all: $(LIBRARY) $(BENCHMARKS) tools tools_lib test_libs $(TESTS)
+all: $(LIBRARY) $(BENCHMARKS) tools tools_lib test_libs $(LOGTESTS)
 
 static_lib: $(LIBRARY)
 
@@ -1228,6 +1232,9 @@ full_filter_block_test: table/full_filter_block_test.o $(LIBOBJECTS) $(TESTHARNE
 	$(AM_LINK)
 
 partitioned_filter_block_test: table/partitioned_filter_block_test.o $(LIBOBJECTS) $(TESTHARNESS)
+	$(AM_LINK)
+
+log_level0_sstable_test: db/log_level0_sstable_test.o $(LIBOBJECTS) $(TESTHARNESS)
 	$(AM_LINK)
 
 log_test: db/log_test.o $(LIBOBJECTS) $(TESTHARNESS)
