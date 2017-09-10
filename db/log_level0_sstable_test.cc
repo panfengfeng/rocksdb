@@ -21,7 +21,7 @@
 #include <iostream>
 
 namespace rocksdb {
-    Status loglevel0sstable() {
+    Status writebatchlogwriteandread() {
    // Env
         Env* env = Env::Default();
    // writebatch
@@ -47,12 +47,15 @@ namespace rocksdb {
                 batch.Put("wahaha", "huluwa");
                 batch.Put("bannilu", "senma");
             }
-            std::cout << "batch kv count " << batch.Count() << std::endl;
-
-            s = env->GetFileSize(fname, &size[i]);
-            std::cout << "offset " << size[i] << std::endl;
 
             WriteBatchInternal::SetSequence(&batch, i);
+
+            std::cout << "batch kv count " << batch.Count() << std::endl;
+            std::cout << "batch size " << batch.GetDataSize() << std::endl;
+
+            s = env->GetFileSize(fname, &size[i]);
+            std::cout << "before addrecord offset " << size[i] << std::endl;
+
             Slice log_entry = WriteBatchInternal::Contents(&batch);
 
             s = new_log->AddRecord(log_entry);
@@ -62,6 +65,9 @@ namespace rocksdb {
             } else {
                 std::cout << "addrecord wrong!" << std::endl;
             }
+
+            s = env->GetFileSize(fname, &size[i]);
+            std::cout << "after addrecord offset " << size[i] << std::endl;
             batch.Clear();
         }
 
@@ -120,7 +126,8 @@ namespace rocksdb {
                     case kTypeColumnFamilyValue:
                     case kTypeValue:
                         found++;
-                        std::cout << found << " kv pair " << key.ToString() << " " << value.ToString() << std::endl;
+                        std::cout << found << " kv pair " << key.ToString() << " " << key.size() << " "
+                                  << value.ToString() << " " << value.size() << std::endl;
                         break;
                     case kTypeColumnFamilyDeletion:
                     case kTypeDeletion:
@@ -160,9 +167,14 @@ namespace rocksdb {
         }
         return s;
     }
+
+    Status writegrouplogwriteandread() {
+        Status s;
+        return s;
+    }
 }  // namespace rocksdb
 
 int main(int argc, char** argv) {
-    rocksdb::loglevel0sstable();
+    rocksdb::writebatchlogwriteandread();
     return 0;
 }
