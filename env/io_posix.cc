@@ -220,6 +220,17 @@ Status PosixSequentialFile::Skip(uint64_t n) {
   return Status::OK();
 }
 
+long PosixSequentialFile::FileCurrentPos() {
+   return ftell(file_);
+}
+
+Status PosixSequentialFile::LocateInitPos() {
+  if (fseek(file_, 0, SEEK_SET)) {
+    return IOError("error fseek to the beginning of the file", filename_, errno);
+  }
+  return Status::OK();
+}
+
 Status PosixSequentialFile::InvalidateCache(size_t offset, size_t length) {
 #ifndef OS_LINUX
   return Status::OK();

@@ -74,6 +74,9 @@ class PosixSequentialFile : public SequentialFile {
   virtual size_t GetRequiredBufferAlignment() const override {
     return logical_sector_size_;
   }
+
+  long FileCurrentPos() override ;
+  Status LocateInitPos() override ;
 };
 
 class PosixRandomAccessFile : public RandomAccessFile {

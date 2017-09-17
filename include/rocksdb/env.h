@@ -471,7 +471,15 @@ class SequentialFile {
   // REQUIRES: External synchronization
   virtual Status Skip(uint64_t n) = 0;
 
-  // Indicates the upper layers if the current SequentialFile implementation
+  virtual long FileCurrentPos() {
+    return 0;
+  }
+
+  virtual Status LocateInitPos() {
+    return Status::NotSupported();
+  }
+
+    // Indicates the upper layers if the current SequentialFile implementation
   // uses direct IO.
   virtual bool use_direct_io() const { return false; }
 

@@ -47,6 +47,10 @@ class SequentialFileReader {
 
   Status Skip(uint64_t n);
 
+  long FileCurrentPos();
+
+  Status LocateInitPos();
+
   void Rewind();
 
   SequentialFile* file() { return file_.get(); }

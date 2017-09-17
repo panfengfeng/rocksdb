@@ -69,6 +69,14 @@ Status SequentialFileReader::Skip(uint64_t n) {
   return file_->Skip(n);
 }
 
+long SequentialFileReader::FileCurrentPos() {
+  return file_->FileCurrentPos();
+}
+
+Status SequentialFileReader::LocateInitPos() {
+  return file_->LocateInitPos();
+}
+
 Status RandomAccessFileReader::Read(uint64_t offset, size_t n, Slice* result,
                                     char* scratch) const {
   Status s;

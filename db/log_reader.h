@@ -69,6 +69,12 @@ class Reader {
                   WALRecoveryMode wal_recovery_mode =
                       WALRecoveryMode::kTolerateCorruptedTailRecords);
 
+  Status LocateInitPos();
+
+  long FileCurrentPos();
+
+  void Reset(uint64_t initial_offset);
+
   // Returns the physical offset of the last record returned by ReadRecord.
   //
   // Undefined before the first call to ReadRecord.
@@ -90,10 +96,10 @@ class Reader {
 
  private:
   std::shared_ptr<Logger> info_log_;
-  const unique_ptr<SequentialFileReader> file_;
+  unique_ptr<SequentialFileReader> file_;
   Reporter* const reporter_;
   bool const checksum_;
-  char* const backing_store_;
+  char* backing_store_;
   Slice buffer_;
   bool eof_;   // Last Read() indicated EOF by returning < kBlockSize
   bool read_error_;   // Error occurred while reading from file
@@ -108,7 +114,7 @@ class Reader {
   uint64_t end_of_buffer_offset_;
 
   // Offset at which to start looking for the first record to return
-  uint64_t const initial_offset_;
+  uint64_t initial_offset_;
 
   // which log number this is
   uint64_t const log_number_;
@@ -139,6 +145,7 @@ class Reader {
   //
   // Returns true on success. Handles reporting.
   bool SkipToInitialBlock();
+
 
   // Return type, or one of the preceding special values
   unsigned int ReadPhysicalRecord(Slice* result, size_t* drop_size);

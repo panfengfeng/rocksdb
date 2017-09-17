@@ -10,6 +10,7 @@
 #include "db/log_reader.h"
 
 #include <stdio.h>
+#include <iostream>
 #include "rocksdb/env.h"
 #include "util/coding.h"
 #include "util/crc32c.h"
@@ -41,6 +42,26 @@ Reader::Reader(std::shared_ptr<Logger> info_log,
 
 Reader::~Reader() {
   delete[] backing_store_;
+}
+
+long Reader::FileCurrentPos() {
+  return file_->FileCurrentPos();
+}
+
+Status Reader::LocateInitPos() {
+  return file_->LocateInitPos();
+}
+
+void Reader::Reset(uint64_t initial_offset) {
+  initial_offset_ = initial_offset;
+  buffer_.clear();
+  last_record_offset_ = 0;
+  end_of_buffer_offset_ = 0;
+  eof_offset_ = 0;
+  eof_ = false;
+  read_error_ = false;
+  delete[] backing_store_;
+  backing_store_ = new char[kBlockSize];
 }
 
 bool Reader::SkipToInitialBlock() {
@@ -103,11 +124,11 @@ bool Reader::ReadRecord(Slice* record, std::string* scratch,
           // at the beginning of the next block.
           ReportCorruption(scratch->size(), "partial record without end(1)");
         }
-        prospective_record_offset = physical_record_offset;
-        scratch->clear();
-        *record = fragment;
-        last_record_offset_ = prospective_record_offset;
-        return true;
+            prospective_record_offset = physical_record_offset;
+            scratch->clear();
+            *record = fragment;
+            last_record_offset_ = prospective_record_offset;
+            return true;
 
       case kFirstType:
       case kRecyclableFirstType:
@@ -118,10 +139,10 @@ bool Reader::ReadRecord(Slice* record, std::string* scratch,
           // at the beginning of the next block.
           ReportCorruption(scratch->size(), "partial record without end(2)");
         }
-        prospective_record_offset = physical_record_offset;
-        scratch->assign(fragment.data(), fragment.size());
-        in_fragmented_record = true;
-        break;
+            prospective_record_offset = physical_record_offset;
+            scratch->assign(fragment.data(), fragment.size());
+            in_fragmented_record = true;
+            break;
 
       case kMiddleType:
       case kRecyclableMiddleType:
@@ -131,7 +152,7 @@ bool Reader::ReadRecord(Slice* record, std::string* scratch,
         } else {
           scratch->append(fragment.data(), fragment.size());
         }
-        break;
+            break;
 
       case kLastType:
       case kRecyclableLastType:
@@ -144,14 +165,14 @@ bool Reader::ReadRecord(Slice* record, std::string* scratch,
           last_record_offset_ = prospective_record_offset;
           return true;
         }
-        break;
+            break;
 
       case kBadHeader:
         if (wal_recovery_mode == WALRecoveryMode::kAbsoluteConsistency) {
           // in clean shutdown we don't expect any error in the log files
           ReportCorruption(drop_size, "truncated header");
         }
-      // fall-thru
+            // fall-thru
 
       case kEof:
         if (in_fragmented_record) {
@@ -164,7 +185,7 @@ bool Reader::ReadRecord(Slice* record, std::string* scratch,
           //  treat it as a corruption, just ignore the entire logical record.
           scratch->clear();
         }
-        return false;
+            return false;
 
       case kOldRecord:
         if (wal_recovery_mode != WALRecoveryMode::kSkipAnyCorruptedRecords) {
@@ -181,7 +202,7 @@ bool Reader::ReadRecord(Slice* record, std::string* scratch,
           }
           return false;
         }
-      // fall-thru
+            // fall-thru
 
       case kBadRecord:
         if (in_fragmented_record) {
@@ -189,34 +210,34 @@ bool Reader::ReadRecord(Slice* record, std::string* scratch,
           in_fragmented_record = false;
           scratch->clear();
         }
-        break;
+            break;
 
       case kBadRecordLen:
       case kBadRecordChecksum:
         if (recycled_ &&
             wal_recovery_mode ==
-                WALRecoveryMode::kTolerateCorruptedTailRecords) {
+            WALRecoveryMode::kTolerateCorruptedTailRecords) {
           scratch->clear();
           return false;
         }
-        if (record_type == kBadRecordLen) {
-          ReportCorruption(drop_size, "bad record length");
-        } else {
-          ReportCorruption(drop_size, "checksum mismatch");
-        }
-        if (in_fragmented_record) {
-          ReportCorruption(scratch->size(), "error in middle of record");
-          in_fragmented_record = false;
-          scratch->clear();
-        }
-        break;
+            if (record_type == kBadRecordLen) {
+              ReportCorruption(drop_size, "bad record length");
+            } else {
+              ReportCorruption(drop_size, "checksum mismatch");
+            }
+            if (in_fragmented_record) {
+              ReportCorruption(scratch->size(), "error in middle of record");
+              in_fragmented_record = false;
+              scratch->clear();
+            }
+            break;
 
       default: {
         char buf[40];
         snprintf(buf, sizeof(buf), "unknown record type %u", record_type);
         ReportCorruption(
-            (fragment.size() + (in_fragmented_record ? scratch->size() : 0)),
-            buf);
+                (fragment.size() + (in_fragmented_record ? scratch->size() : 0)),
+                buf);
         in_fragmented_record = false;
         scratch->clear();
         break;
